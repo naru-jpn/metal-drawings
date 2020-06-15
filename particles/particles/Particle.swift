@@ -11,7 +11,9 @@ import UIKit
 class Particle {
     var position: CGPoint = .zero
     var velocity: CGPoint = .zero
+}
 
+extension Particle {
     func applyRandomPosition() {
         position.x = CGFloat.random(in: -200...200)
         position.y = CGFloat.random(in: -200...200)
