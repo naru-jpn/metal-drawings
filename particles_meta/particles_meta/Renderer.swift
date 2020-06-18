@@ -12,13 +12,19 @@ import MetalKit
 final class Renderer: NSObject, MTKViewDelegate {
     private static let maxFramesInFlight: Int = 3
     private static let numParticles: Int = 200
+    private static let defaultTextureSize: CGSize = CGSize(width: 1024, height: 1024)
 
     let device: MTLDevice
     let commandQueue: MTLCommandQueue
+
     let particleRenderPipelineState: MTLRenderPipelineState
     let thresholdRenderPipelineState: MTLRenderPipelineState
+
     let particleVertexBuffers: [MTLBuffer]
     let thresholdVertexBuffer: MTLBuffer
+
+    let textureDescriptor: MTLTextureDescriptor
+    var particleTexture: MTLTexture
 
     lazy var particles: [Particle] = (0..<Renderer.numParticles).map { _ in Particle() }
 
@@ -125,6 +131,20 @@ final class Renderer: NSObject, MTKViewDelegate {
         }
         thresholdVertexBuffer = buffer
 
+        // textures
+
+        textureDescriptor = MTLTextureDescriptor()
+        textureDescriptor.textureType = .type2D
+        textureDescriptor.pixelFormat = view.colorPixelFormat
+        textureDescriptor.usage = [.renderTarget, .shaderRead]
+        textureDescriptor.width = Int(Renderer.defaultTextureSize.width)
+        textureDescriptor.height = Int(Renderer.defaultTextureSize.height)
+
+        guard let particleTexture = device.makeTexture(descriptor: textureDescriptor) else {
+            fatalError("Failed to make particle texture.")
+        }
+        self.particleTexture = particleTexture
+
         super.init()
 
         for particle in particles {
@@ -154,9 +174,18 @@ final class Renderer: NSObject, MTKViewDelegate {
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
         viewportSize.x = UInt32(size.width)
         viewportSize.y = UInt32(size.height)
+
+        textureDescriptor.width = Int(size.width)
+        textureDescriptor.height = Int(size.height)
+        guard let particleTexture = device.makeTexture(descriptor: textureDescriptor) else {
+            fatalError("Failed to make particle texture.")
+        }
+        self.particleTexture = particleTexture
     }
 
     func draw(in view: MTKView) {
+
+
         let semaphore = inFlightSemaphore
         _ = semaphore.wait(timeout: DispatchTime.distantFuture)
 
@@ -168,7 +197,13 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         updateState()
 
-        guard let renderPassDescriptor = view.currentRenderPassDescriptor, var renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
+        let renderPassDescriptor = MTLRenderPassDescriptor()
+        renderPassDescriptor.colorAttachments[0].texture = particleTexture
+        renderPassDescriptor.colorAttachments[0].loadAction = .clear
+        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0)
+        renderPassDescriptor.colorAttachments[0].storeAction = .store
+
+        guard var renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
             return
         }
         renderEncoder.label = "Particle Render Encoder"
@@ -182,6 +217,11 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         renderEncoder.endEncoding()
 
+
+        renderPassDescriptor.colorAttachments[0].texture = view.currentDrawable?.texture
+        renderPassDescriptor.colorAttachments[0].loadAction = .dontCare
+        renderPassDescriptor.colorAttachments[0].storeAction = .store
+
         guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
             return
         }
@@ -191,7 +231,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         renderEncoder.pushDebugGroup("Threshold Filter")
         renderEncoder.setRenderPipelineState(thresholdRenderPipelineState)
         renderEncoder.setVertexBuffer(thresholdVertexBuffer, offset: 0, index: 0)
-        renderEncoder.setFragmentTexture(view.currentDrawable?.texture, index: 0)
+        renderEncoder.setFragmentTexture(particleTexture, index: 0)
         renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
         renderEncoder.popDebugGroup()
 

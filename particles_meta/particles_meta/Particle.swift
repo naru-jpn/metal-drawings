@@ -20,7 +20,7 @@ extension Particle {
     }
 
     func applyRandomVelocity() {
-        velocity.x = CGFloat.random(in: -8...8)
-        velocity.y = CGFloat.random(in: -13...13)
+        velocity.x = CGFloat.random(in: -10...10)
+        velocity.y = CGFloat.random(in: -10...10)
     }
 }
