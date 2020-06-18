@@ -184,8 +184,6 @@ final class Renderer: NSObject, MTKViewDelegate {
     }
 
     func draw(in view: MTKView) {
-
-
         let semaphore = inFlightSemaphore
         _ = semaphore.wait(timeout: DispatchTime.distantFuture)
 
