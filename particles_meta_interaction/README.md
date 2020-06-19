@@ -1,5 +1,5 @@
-# particles_meta
+# particles_meta_interaction
 
-Compute particles on cpu and draw texture with metal.
+Compute interactive particles on cpu and draw texture with metal.
 
-<kbd><img src="https://user-images.githubusercontent.com/5572875/84915192-74ba5280-b0f7-11ea-86aa-a4fae4317adc.gif" width="350"></kbd>
+<kbd><img src="https://user-images.githubusercontent.com/5572875/85055493-99d2c200-b1d8-11ea-90be-7aeea30188b8.gif" width="350"></kbd>
