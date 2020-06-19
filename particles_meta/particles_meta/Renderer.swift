@@ -109,7 +109,7 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         // buffers
 
-        let vertexBufferLength: Int = MemoryLayout<vertex_t>.size
+        let vertexBufferLength: Int = MemoryLayout<vertex_t>.size * Renderer.numParticles
         var vertexBuffers: [MTLBuffer] = []
         for i in 0..<Renderer.maxFramesInFlight {
             guard let vertexBuffer = device.makeBuffer(length: vertexBufferLength, options: .storageModeShared) else {
@@ -165,9 +165,8 @@ final class Renderer: NSObject, MTKViewDelegate {
 
             // Update particle velocity
             let r2 = max(5.0E5, pow(particle.position.x, 2) + pow(particle.position.y, 2))
-            let r = sqrt(r2)
-            particle.velocity.x -= 1.0E5 * (particle.position.x / r) / r2
-            particle.velocity.y -= 1.0E5 * (particle.position.y / r) / r2
+            particle.velocity.x -= 1.0E5 * (particle.position.x / abs(particle.position.x)) / r2
+            particle.velocity.y -= 1.0E5 * (particle.position.y / abs(particle.position.y)) / r2
         }
     }
 

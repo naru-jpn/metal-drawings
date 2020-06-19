@@ -47,7 +47,7 @@
 		437C25052493C5880002232B = {
 			isa = PBXGroup;
 			children = (
-				437C25102493C5880002232B /* particles_meta */,
+				437C25102493C5880002232B /* particles_meta_interaction */,
 				437C250F2493C5880002232B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -60,7 +60,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		437C25102493C5880002232B /* particles_meta */ = {
+		437C25102493C5880002232B /* particles_meta_interaction */ = {
 			isa = PBXGroup;
 			children = (
 				437C25112493C5880002232B /* AppDelegate.swift */,
@@ -75,7 +75,7 @@
 				437C251C2493C5880002232B /* LaunchScreen.storyboard */,
 				437C251F2493C5880002232B /* Info.plist */,
 			);
-			path = particles_meta;
+			path = particles_meta_interaction;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
