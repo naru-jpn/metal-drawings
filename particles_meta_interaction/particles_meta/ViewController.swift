@@ -19,6 +19,7 @@ class ViewController: UIViewController {
         guard let view = view as? MTKView else {
             fatalError("Failed get view as MTKView.")
         }
+        mtkView = view
         guard let device = MTLCreateSystemDefaultDevice() else {
             fatalError("Failed to create ssytem default device.")
         }
@@ -26,6 +27,10 @@ class ViewController: UIViewController {
 
         renderer = Renderer(view: view)
         renderer.mtkView(view, drawableSizeWillChange: view.drawableSize)
+
+        // Reference: https://developer.apple.com/documentation/metal/preparing_your_metal_app_to_run_in_the_background
+        NotificationCenter.default.addObserver(self, selector: #selector(applicationWillResignActive), name: UIApplication.willResignActiveNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(applicationDidBecomeActive), name: UIApplication.didBecomeActiveNotification, object: nil)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -53,6 +58,16 @@ class ViewController: UIViewController {
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         renderer.updateInteractionPoint(touchPointInView: nil)
+    }
+
+    @objc
+    private func applicationWillResignActive() {
+        mtkView.isPaused = true
+    }
+
+    @objc
+    private func applicationDidBecomeActive() {
+        mtkView.isPaused = false
     }
 }
 
