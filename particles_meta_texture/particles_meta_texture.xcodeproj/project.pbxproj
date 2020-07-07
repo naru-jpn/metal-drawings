@@ -19,7 +19,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		437C250E2493C5880002232B /* particles_meta_Interaction.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = particles_meta_Interaction.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		437C250E2493C5880002232B /* particles_meta_texture.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = particles_meta_texture.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		437C25112493C5880002232B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		437C25132493C5880002232B /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		437C25152493C5880002232B /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -47,7 +47,7 @@
 		437C25052493C5880002232B = {
 			isa = PBXGroup;
 			children = (
-				437C25102493C5880002232B /* particles_meta_interaction */,
+				437C25102493C5880002232B /* particles_meta_texture */,
 				437C250F2493C5880002232B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -55,12 +55,12 @@
 		437C250F2493C5880002232B /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				437C250E2493C5880002232B /* particles_meta_Interaction.app */,
+				437C250E2493C5880002232B /* particles_meta_texture.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		437C25102493C5880002232B /* particles_meta_interaction */ = {
+		437C25102493C5880002232B /* particles_meta_texture */ = {
 			isa = PBXGroup;
 			children = (
 				437C25112493C5880002232B /* AppDelegate.swift */,
@@ -75,15 +75,15 @@
 				437C251C2493C5880002232B /* LaunchScreen.storyboard */,
 				437C251F2493C5880002232B /* Info.plist */,
 			);
-			path = particles_meta_interaction;
+			path = particles_meta_texture;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		437C250D2493C5880002232B /* particles_meta_Interaction */ = {
+		437C250D2493C5880002232B /* particles_meta_texture */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 437C25222493C5880002232B /* Build configuration list for PBXNativeTarget "particles_meta_Interaction" */;
+			buildConfigurationList = 437C25222493C5880002232B /* Build configuration list for PBXNativeTarget "particles_meta_texture" */;
 			buildPhases = (
 				437C250A2493C5880002232B /* Sources */,
 				437C250B2493C5880002232B /* Frameworks */,
@@ -93,9 +93,9 @@
 			);
 			dependencies = (
 			);
-			name = particles_meta_Interaction;
+			name = particles_meta_texture;
 			productName = particles;
-			productReference = 437C250E2493C5880002232B /* particles_meta_Interaction.app */;
+			productReference = 437C250E2493C5880002232B /* particles_meta_texture.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -113,7 +113,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 437C25092493C5880002232B /* Build configuration list for PBXProject "particles_meta_Interaction" */;
+			buildConfigurationList = 437C25092493C5880002232B /* Build configuration list for PBXProject "particles_meta_texture" */;
 			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -126,7 +126,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				437C250D2493C5880002232B /* particles_meta_Interaction */,
+				437C250D2493C5880002232B /* particles_meta_texture */,
 			);
 		};
 /* End PBXProject section */
@@ -302,7 +302,7 @@
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = QTG7MUN42X;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INFOPLIST_FILE = particles_meta_interaction/Info.plist;
+				INFOPLIST_FILE = particles_meta_texture/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -310,7 +310,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.jpn.naru.particles;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = particles_meta_interaction/ShaderTypes.h;
+				SWIFT_OBJC_BRIDGING_HEADER = particles_meta_texture/ShaderTypes.h;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -323,7 +323,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = QTG7MUN42X;
-				INFOPLIST_FILE = particles_meta_interaction/Info.plist;
+				INFOPLIST_FILE = particles_meta_texture/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -331,7 +331,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.jpn.naru.particles;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = particles_meta_interaction/ShaderTypes.h;
+				SWIFT_OBJC_BRIDGING_HEADER = particles_meta_texture/ShaderTypes.h;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -340,7 +340,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		437C25092493C5880002232B /* Build configuration list for PBXProject "particles_meta_Interaction" */ = {
+		437C25092493C5880002232B /* Build configuration list for PBXProject "particles_meta_texture" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				437C25202493C5880002232B /* Debug */,
@@ -349,7 +349,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		437C25222493C5880002232B /* Build configuration list for PBXNativeTarget "particles_meta_Interaction" */ = {
+		437C25222493C5880002232B /* Build configuration list for PBXNativeTarget "particles_meta_texture" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				437C25232493C5880002232B /* Debug */,
