@@ -10,7 +10,7 @@
 #include "ShaderTypes.h"
 using namespace metal;
 
-constant float POINT_SIZE = 150.0f;
+constant float POINT_SIZE = 120.0f;
 
 struct Point {
     float4 position [[position]];
@@ -62,7 +62,7 @@ fragment float4 threshold_fragment(PlaneVertexOut in [[stage_in]], texture2d<flo
 {
     constexpr sampler colorSampler(mip_filter::linear, mag_filter::linear, min_filter::linear);
     float4 color = texture.sample(colorSampler, in.texCoord);
-    float filled = color[2] > 0.3 ? 0.0 : 1.0;
+    float filled = color[2] > 0.4 ? 0.0 : 1.0;
     return float4(filled, filled, 1.0, 1.0);
 }
 

@@ -15,8 +15,8 @@ class Particle {
 
 extension Particle {
     func applyRandomPosition() {
-        position.x = CGFloat.random(in: -400...400)
-        position.y = CGFloat.random(in: -400...400)
+        position.x = CGFloat.random(in: -300...300)
+        position.y = CGFloat.random(in: -300...300)
     }
 
     func applyRandomVelocity() {
