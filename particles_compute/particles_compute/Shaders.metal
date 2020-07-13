@@ -10,20 +10,20 @@
 #include "ShaderTypes.h"
 using namespace metal;
 
-constant float POINT_SIZE = 120.0f;
+constant float POINT_SIZE = 150.0f;
 
 struct Point {
     float4 position [[position]];
     float size [[point_size]];
 };
 
-vertex Point particle_vertex(const device vertex_t* positions [[ buffer(0) ]],
-                                  constant vector_uint2 *viewportSizePointer  [[ buffer(1) ]],
-                                  unsigned int vid [[ vertex_id ]])
+vertex Point particle_vertex(const device particle_t* particles [[ buffer(0) ]],
+                             constant vector_uint2 *viewportSizePointer [[ buffer(1) ]],
+                             unsigned int vid [[ vertex_id ]])
 {
     Point out;
 
-    float2 position = positions[vid].position;
+    float2 position = particles[vid].position;
     vector_float2 viewportSize = vector_float2(*viewportSizePointer);
     out.position = vector_float4(0.0f, 0.0f, 0.0f, 1.0f);
     out.position.xy = position / (viewportSize / 2.0f);
@@ -33,7 +33,9 @@ vertex Point particle_vertex(const device vertex_t* positions [[ buffer(0) ]],
     return out;
 }
 
-fragment float4 particle_fragment(Point in [[stage_in]],  float2 uv[[point_coord]], texture2d<float, access::sample> texture [[ texture(0) ]])
+fragment float4 particle_fragment(Point in [[stage_in]],
+                                  float2 uv[[point_coord]],
+                                  texture2d<float, access::sample> texture [[ texture(0) ]])
 {
     constexpr sampler colorSampler(mip_filter::linear, mag_filter::linear, min_filter::linear);
     float4 color = texture.sample(colorSampler, uv);

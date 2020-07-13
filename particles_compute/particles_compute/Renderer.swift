@@ -11,6 +11,7 @@ import MetalKit
 
 final class Renderer: NSObject, MTKViewDelegate {
     private static let maxFramesInFlight: Int = 3
+    private static let maxFramesInSimulate: Int = 1
     private static let numParticles: Int = 100
     private static let defaultTextureSize: CGSize = CGSize(width: 1024, height: 1024)
 
@@ -20,10 +21,11 @@ final class Renderer: NSObject, MTKViewDelegate {
 
     let particleTexture: MTLTexture
 
+    let simulatePipelineState: MTLComputePipelineState
     let particleRenderPipelineState: MTLRenderPipelineState
     let thresholdRenderPipelineState: MTLRenderPipelineState
 
-    let particleVertexBuffers: [MTLBuffer]
+    let particleBuffers: [MTLBuffer]
     let thresholdVertexBuffer: MTLBuffer
 
     let textureDescriptor: MTLTextureDescriptor
@@ -32,10 +34,11 @@ final class Renderer: NSObject, MTKViewDelegate {
     lazy var particles: [Particle] = (0..<Renderer.numParticles).map { _ in Particle() }
 
     let inFlightSemaphore = DispatchSemaphore(value: Renderer.maxFramesInFlight)
+    let inSimulateSemaphore = DispatchSemaphore(value: Renderer.maxFramesInSimulate)
     var currentBufferIndex: Int = 0
 
     var viewportSize: vector_uint2 = .zero
-    var interactionPoint: CGPoint?
+    var numParticles: uint = uint(Renderer.numParticles)
 
     init(view: MTKView) {
         self.view = view
@@ -46,6 +49,17 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         guard let library = device.makeDefaultLibrary() else {
             fatalError("Failed to make default mtllibrary.")
+        }
+
+        // simulatePipelineState
+
+        guard let simulationFunction = library.makeFunction(name: "simulation") else {
+            fatalError("Failed to make functions.")
+        }
+        do {
+            simulatePipelineState = try device.makeComputePipelineState(function: simulationFunction)
+        } catch {
+            fatalError("Failed to make simutate pipeline state with error: \(error)")
         }
 
         // particleRenderPipelineState
@@ -114,7 +128,7 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         // buffers
 
-        let vertexBufferLength: Int = MemoryLayout<vertex_t>.size * Renderer.numParticles
+        let vertexBufferLength: Int = MemoryLayout<particle_t>.size * Renderer.numParticles
         var vertexBuffers: [MTLBuffer] = []
         for i in 0..<Renderer.maxFramesInFlight {
             guard let vertexBuffer = device.makeBuffer(length: vertexBufferLength, options: .storageModeShared) else {
@@ -123,7 +137,7 @@ final class Renderer: NSObject, MTKViewDelegate {
             vertexBuffer.label = "vetex_buffer_\(i + 1)"
             vertexBuffers.append(vertexBuffer)
         }
-        self.particleVertexBuffers = vertexBuffers
+        self.particleBuffers = vertexBuffers
 
         let bytes: [float_t] = [
             -1.0, -1.0,  0.0,  1.0,
@@ -168,90 +182,32 @@ final class Renderer: NSObject, MTKViewDelegate {
             particle.applyRandomPosition()
             particle.applyRandomVelocity()
         }
-    }
-
-    private func updateState() {
-        let currentVertexBuffer = particleVertexBuffers[currentBufferIndex].contents().bindMemory(to: vertex_t.self, capacity: Renderer.numParticles)
+        let particleBuffer = particleBuffers[0].contents().bindMemory(to: particle_t.self, capacity: Renderer.numParticles)
         for (offset, particle) in particles.enumerated() {
-            // Update particle position
-            particle.position.x += particle.velocity.x
-            particle.position.y += particle.velocity.y
-
-            currentVertexBuffer[offset].position.x = Float(particle.position.x)
-            currentVertexBuffer[offset].position.y = Float(particle.position.y)
-
-            if let point = interactionPoint {
-                let x = particle.position.x - point.x
-                let y = particle.position.y - point.y
-                let r2 = max(5.0E5, pow(x, 2) + pow(y, 2))
-                particle.velocity.x -= 5.0E5 * (x / abs(x)) / r2
-                particle.velocity.y -= 5.0E5 * (y / abs(y)) / r2
-            } else {
-                let r2orig = pow(particle.position.x, 2) + pow(particle.position.y, 2)
-                let r2 = max(5.0E5, r2orig)
-                particle.velocity.x -= 1.0E5 * (particle.position.x / abs(particle.position.x)) / r2
-                particle.velocity.y -= 1.0E5 * (particle.position.y / abs(particle.position.y)) / r2
-            }
-
-            currentVertexBuffer[offset].type = 1
-            for (offset2, particle2) in particles.enumerated() {
-                guard offset != offset2 else {
-                    continue
-                }
-                let r2 = pow((particle.position.x - particle2.position.x), 2) + pow((particle.position.y - particle2.position.y), 2)
-                if r2 < 45000 {
-                    currentVertexBuffer[offset].type = 0
-                    break
-                }
-            }
-
-            let v = pow(particle.velocity.x, 2) + pow(particle.velocity.y, 2)
-            if v > 5.0E2 {
-                particle.velocity.x /= v / 5.0E2
-                particle.velocity.y /= v / 5.0E2
-            }
+            particleBuffer[offset].position = vector_float2(x: Float(particle.position.x), y: Float(particle.position.y))
+            particleBuffer[offset].velocity = vector_float2(x: Float(particle.velocity.x), y: Float(particle.velocity.y))
         }
     }
 
-    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-        viewportSize.x = UInt32(size.width)
-        viewportSize.y = UInt32(size.height)
-
-        textureDescriptor.width = Int(size.width)
-        textureDescriptor.height = Int(size.height)
-        var textures: [MTLTexture] = []
-        for _ in 0..<Renderer.maxFramesInFlight {
-            guard let texture = device.makeTexture(descriptor: textureDescriptor) else {
-                fatalError("Failed to make particle texture.")
-            }
-            textures.append(texture)
+    private func updateState(with commandBuffer: MTLCommandBuffer) {
+        guard let computeEncoder = commandBuffer.makeComputeCommandEncoder() else {
+            return
         }
-        self.textures = textures
+        computeEncoder.label = "Simulation Encoder"
+
+        let dispatchThreads = MTLSize(width: Renderer.numParticles, height: 1, depth: 1)
+        let threadsPerThreadgroup = MTLSize(width: simulatePipelineState.threadExecutionWidth, height: 1, depth: 1)
+
+        computeEncoder.setComputePipelineState(simulatePipelineState)
+        computeEncoder.setBuffer(particleBuffers[currentBufferIndex], offset: 0, index: 0)
+        computeEncoder.setBuffer(particleBuffers[(currentBufferIndex + 1) % Renderer.maxFramesInFlight], offset: 0, index: 1)
+        computeEncoder.setBytes(&numParticles, length: MemoryLayout<uint>.size, index: 2)
+        computeEncoder.setThreadgroupMemoryLength(simulatePipelineState.threadExecutionWidth * MemoryLayout<particle_t>.size, index: 0)
+        computeEncoder.dispatchThreads(dispatchThreads, threadsPerThreadgroup: threadsPerThreadgroup)
+        computeEncoder.endEncoding()
     }
 
-    func updateInteractionPoint(touchPointInView: CGPoint?) {
-        if let point = touchPointInView {
-            interactionPoint = CGPoint(
-                x: (point.x - CGFloat(view.frame.width / 2)) * view.contentScaleFactor,
-                y: ((view.frame.height - point.y) - CGFloat(view.frame.height / 2)) * view.contentScaleFactor
-            )
-        } else {
-            interactionPoint = nil
-        }
-    }
-
-    func draw(in view: MTKView) {
-        let semaphore = inFlightSemaphore
-        _ = semaphore.wait(timeout: DispatchTime.distantFuture)
-
-        currentBufferIndex = (currentBufferIndex + 1) % Renderer.maxFramesInFlight
-
-        guard let commandBuffer = commandQueue.makeCommandBuffer() else {
-            fatalError("Failed to make command buffer.")
-        }
-
-        updateState()
-
+    private func render(with commandBuffer: MTLCommandBuffer) {
         let renderPassDescriptor = MTLRenderPassDescriptor()
         renderPassDescriptor.colorAttachments[0].texture = textures[currentBufferIndex]
         renderPassDescriptor.colorAttachments[0].loadAction = .clear
@@ -265,7 +221,7 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         renderEncoder.pushDebugGroup("Draw Particles")
         renderEncoder.setRenderPipelineState(particleRenderPipelineState)
-        renderEncoder.setVertexBuffer(particleVertexBuffers[currentBufferIndex], offset: 0, index: 0)
+        renderEncoder.setVertexBuffer(particleBuffers[(currentBufferIndex + 1) % Renderer.maxFramesInFlight], offset: 0, index: 0)
         renderEncoder.setVertexBytes(&viewportSize, length: MemoryLayout<vector_float2>.size, index: 1)
         renderEncoder.setFragmentTexture(particleTexture, index: 0)
         renderEncoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: Renderer.numParticles)
@@ -295,10 +251,55 @@ final class Renderer: NSObject, MTKViewDelegate {
         if let drawable = view.currentDrawable {
             commandBuffer.present(drawable)
         }
+    }
 
-        commandBuffer.addCompletedHandler { _ in
-            semaphore.signal()
+    func draw(in view: MTKView) {
+        let semaphore = inFlightSemaphore
+        _ = semaphore.wait(timeout: DispatchTime.distantFuture)
+
+        // Simulate
+        do {
+            let simulateSemaphore = inSimulateSemaphore
+            _ = simulateSemaphore.wait(timeout: DispatchTime.distantFuture)
+
+            guard let commandBuffer = commandQueue.makeCommandBuffer() else {
+                fatalError("Failed to make command buffer.")
+            }
+            updateState(with: commandBuffer)
+            commandBuffer.addCompletedHandler { _ in
+                simulateSemaphore.signal()
+            }
+            commandBuffer.commit()
         }
-        commandBuffer.commit()
+
+        // Render
+        do {
+            guard let commandBuffer = commandQueue.makeCommandBuffer() else {
+                fatalError("Failed to make command buffer.")
+            }
+            render(with: commandBuffer)
+            commandBuffer.addCompletedHandler { _ in
+                semaphore.signal()
+            }
+            commandBuffer.commit()
+        }
+
+        currentBufferIndex = (currentBufferIndex + 1) % Renderer.maxFramesInFlight
+    }
+
+    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
+        viewportSize.x = UInt32(size.width)
+        viewportSize.y = UInt32(size.height)
+
+        textureDescriptor.width = Int(size.width)
+        textureDescriptor.height = Int(size.height)
+        var textures: [MTLTexture] = []
+        for _ in 0..<Renderer.maxFramesInFlight {
+            guard let texture = device.makeTexture(descriptor: textureDescriptor) else {
+                fatalError("Failed to make particle texture.")
+            }
+            textures.append(texture)
+        }
+        self.textures = textures
     }
 }

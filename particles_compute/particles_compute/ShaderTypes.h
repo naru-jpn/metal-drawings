@@ -18,10 +18,10 @@
 
 #include <simd/simd.h>
 
-typedef struct
-{
+typedef struct {
     uint8_t type;
     vector_float2 position;
-} vertex_t;
+    vector_float2 velocity;
+} particle_t;
 
 #endif /* ShaderTypes_h */
